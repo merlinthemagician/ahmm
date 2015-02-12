@@ -18,7 +18,7 @@ MCMC= mp_parameter.o mp_mcmc.o likelihood.o mp_proposal.o
 
 HMM = matrixIO.o matrixExp.o matrixArith.o mctools.o mp_HMMlikelihoods.o mp_HMMutils.o nw_data.o
 
-T = $(HMM) $(MCMC) mp_OneOpen$x
+T = $(HMM) $(MCMC) mp_OneOpen$x	mp_Nopen$x
 
 all:	$T
 
@@ -50,7 +50,10 @@ matrixExp.o:	matrixExp.c;
 		$(CC) $(CFLAGS) -c -o $@ matrixExp.c -I$(INCLUDE) $(GSLINC)
 
 mp_OneOpen$x:	$(MCMC) $(HMM) mp_OneOpen.c
-		$(CC) $(CFLAGS) -o $@ $(MCMC) $(HMM) mp_OneOpen.c -I$(INCLUDE) $(GSL) 
+		$(CC) $(CFLAGS) -o $@ $(MCMC) $(HMM) mp_OneOpen.c -I$(INCLUDE) $(GSL)
+
+mp_Nopen$x:	$(MCMC) $(HMM) mp_Nopen.c
+		$(CC) $(CFLAGS) -o $@ $(MCMC) $(HMM) mp_Nopen.c -I$(INCLUDE) -I$(INC) -I$(NETWORK) $(GSL)
 
 mp_mcmc.o:	mp_mcmc.c;
 		$(CC) $(CFLAGS) -c -o $@ mp_mcmc.c -I$(INCLUDE) $(GSLINC)

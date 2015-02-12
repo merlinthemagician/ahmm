@@ -205,6 +205,7 @@ int modes2OClength(const double **A, int *NC, int *NO, int mA, double Pthresh, d
   return maxClosed;
 }
 
+/* Starting from column */
 int* mp_matrix2OClength(FILE* datafp, int *nRows, int nCol,
 			int *NO, int *maxClosed,
 			double Pthresh, double *pC) {
@@ -293,7 +294,6 @@ int* columnsData2NOC(const char *datafn, double thresh, int *NO, int *maxClosed,
   FILE *datafp=fopen(datafn, "r");
   nw_tokline **data=malloc((*nRows)*sizeof(*data));
   double *trace;
-  int nTrace;
   int nCol;
   int i;
   int *NC;
@@ -318,6 +318,66 @@ int* columnsData2NOC(const char *datafn, double thresh, int *NO, int *maxClosed,
   free(data);
 
   return NC;
+}
+
+/* Thresholds nData points in data by threshold. Save bitstring to
+   events. */
+static void thresholdData(int *events, const double *data, double threshold,
+		   int nData) {
+  int i, nOpen=0;
+  double Po, Pc;
+
+  for(i=0; i<nData; i++) {
+    int isO=isOpen(data[i], threshold);
+    /* fprintf(ERR, "thresholdData(): data[%i]=%f (%i)\n", i, data[i], */
+    /* 	    isOpen(data[i],threshold)); */
+    /* fprintf(ERR, "%i %5f %i\n", i+1, data[i], isO); */
+        /* fprintf(ERR, "%i\n",isOpen(data[i],threshold)); */
+    if(isO) nOpen++;
+    events[i]=isO;
+  }
+  
+  fprintf(OUT, "Data processed and class sequence computed,");
+  fprintf(OUT,"openEvents= %i, closedEvents=%i.\n", nOpen, nData-nOpen);
+  Po=(double)nOpen/nData;
+  Pc=1-Po;
+  fprintf(OUT,"Estimated probabilities: Po = %f %%, Pc = %f %%\n",
+	  Po*100,Pc*100);
+}
+
+/* Reads data from a file datafp with nRows rows. Threshold must be
+   provided in thresh.  Returns events, an integer array of zeroes of
+   ones. The ACTUAL number of rows read passed to nRows, total size of
+   data set saved in nData.*/
+int* mp_columnsData2Events(const char *datafn, double thresh,
+			   int* nRows, int *nData) {
+  FILE *datafp=fopen(datafn, "r");
+  nw_tokline **data=malloc((*nRows)*sizeof(*data));
+  double *trace;
+  int nCol;
+  int i;
+  int *events;
+  
+  *nRows=nw_data_fpToTokline(datafp, data);
+  fclose(datafp);
+  
+  fprintf(ERR, "mp_columnsData2Events(): Successfully read %i lines\n", *nRows);
+  
+  nCol=nw_data_nCol((const nw_tokline *)data[0]);
+  trace=malloc(((*nRows)-1)*(nCol-1)*sizeof(*trace));
+  fprintf(ERR, "%s", "mp_columnsData2Events(): Allocated trace\n");
+
+  (*nData)=nw_data_convertColumnsToDouble((const nw_tokline **)data, 1, nCol-1,
+					  1,  (*nRows)-1, trace);
+  /* for(i=0; i<nData; i++) fprintf(OUT, "%lf\n", trace[i]); */
+  fprintf(ERR, "%i doubles in trace\n", *nData);
+  events=calloc((*nData), sizeof(int));
+  thresholdData(events, trace, thresh, *nData);
+  free(trace);
+  for(i=0; i<(*nRows); i++) free(data[i]);
+  free(data);
+
+  return events;
 }
 
 
@@ -377,6 +437,84 @@ void mp_getArgsOneOpen(char **argv, int argc,char **datafn,
   printf("Number of states: %i\n", (*nStates));
 
   (*nIter) = strtol(argv[4], &endptr, 10);
+  printf("Number of iterations: %i\n", (*nIter));
+
+  /* Optional arguments */
+  if(argc>=nArgs+1) {
+    (*delta) = strtod(argv[nArgs], &endptr);
+    printf("delta: Step size of sampler: %f\n", (*delta));
+  }
+
+  if(argc>=nArgs+2) {
+    (*seed) = strtol(argv[nArgs+1], &endptr, 10);
+    printf("Seed for random number generator: %i\n", (*seed));
+  }
+
+  if(argc>=nArgs+3) {
+    prefix = argv[nArgs+2];
+    printf("Prefix for output files: %s\n", prefix);    
+  }
+  
+  fprintf(OUT, "Threshold: %f\n", *thresh);
+
+  /* Add prefix to filenames */
+  (*ratesFn)=malloc(sizeof(char)*(strlen(*ratesFn)+strlen(prefix))+1);
+  strcpy(*ratesFn, prefix);
+  strcat(*ratesFn, defaultRatesFn);
+
+  (*likeFn)=malloc(sizeof(char)*(strlen(prefix)+strlen(defaultLikelihoodName))+1);
+  (*statFn)=malloc(sizeof(char)*(strlen(*statFn)+strlen(prefix)+1));
+
+  strcpy(*statFn, prefix);
+  strcat(*statFn, defaultStatFn);
+
+  strcpy(*likeFn, prefix);
+  strcat(*likeFn, defaultLikelihoodName);
+  fprintf(OUT, "Output written to:\n");
+  fprintf(OUT, "%s\n",*ratesFn);
+  fprintf(OUT, "%s\n",*statFn);
+  fprintf(OUT, "%s\n",*likeFn);
+}
+
+/* Get Arguments for N open states. */
+void mp_getArgsNOpen(char **argv, int argc,char **datafn,
+		     char **modelfile,
+		     int *nStates,
+		     int *nOpen,
+		     int *nIter,
+		     double *delta,
+		     int *seed,
+		     double *thresh,
+		     char **ratesFn,
+		     char **statFn,
+		     char **likeFn) {
+  int nArgs=6;
+  char *endptr;
+  const char *usage="mp_NOpen data model nStates nOpen nIterations [delta] [seed] [prefix]";
+  const char *defaultRatesFn="rates.dat";
+  const char *defaultStatFn="statDist.dat";
+  const char *defaultLikelihoodName="likelihood.dat";
+  char *prefix="piggyN";
+  
+  if(argc < nArgs) {
+    fprintf(ERR, "Usage: %s\n", usage), exit(1);
+  }
+
+  /* datafn=argv[1]; */
+  /* printf("Data file:%s\n", datafn); */
+  (*datafn)=argv[1];
+  printf("Data file:%s\n", (*datafn));
+
+  (*modelfile) = argv[2];
+  printf("Model file:%s\n", (*modelfile));
+
+  (*nStates) = strtol(argv[3], &endptr, 10);
+  printf("Number of states: %i\n", (*nStates));
+
+  (*nOpen) = strtol(argv[4], &endptr, 10);
+  printf("Number of open states: %i\n", (*nOpen));
+
+  (*nIter) = strtol(argv[5], &endptr, 10);
   printf("Number of iterations: %i\n", (*nIter));
 
   /* Optional arguments */

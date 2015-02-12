@@ -59,6 +59,13 @@ int guessOClength(const double *data, int *NC, int *NO, int *n, double thresh, d
 int* columnsData2NOC(const char *datafn, double thresh, int *NO, int *maxClosed,
 		     int* nRows, int *nData, double *pC);
 
+/* Reads data from a file datafp with nRows rows. Threshold must be
+   provided in thresh.  Returns events, an integer array of zeroes of
+   ones. The ACTUAL number of rows read passed to nRows, total size of
+   data set saved in nData.*/
+int* mp_columnsData2Events(const char *datafn, double thresh,
+			   int* nRows, int *nData);
+
 /* Converts A to NO and NC histogram: Po is in column 0 of A, 
    length of segment is in column 2. */
 int modes2OClength(const double **A, int *NC, int *NO, int mA, double Pthresh, double *pC);
@@ -134,4 +141,17 @@ void mp_getArgsOneOpen(char **argv, int argc,char **datafn,
 		       char **ratesFn,
 		       char **statFn,
 		       char **likeFn);
+
+/* Get Arguments for N open states. */
+void mp_getArgsNOpen(char **argv, int argc,char **datafn,
+		     char **modelfile,
+		     int *nStates,
+		     int *nOpen,
+		     int *nIter,
+		     double *delta,
+		     int *seed,
+		     double *thresh,
+		     char **ratesFn,
+		     char **statFn,
+		     char **likeFn);
 #endif
