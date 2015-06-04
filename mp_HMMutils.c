@@ -261,6 +261,44 @@ void modes2Events(int *events, const double **A, double Pthreshold,
 	  N, (double) nOpen/N, (double)nClosed/N);
 }
 
+int* mp_matrix2events(FILE* datafp, int *nRows, int *nEvents, double Pthresh) {
+  double **A=malloc((*nRows)*sizeof(*A));
+  int i;
+  int *events;
+  int nCol=4;
+  
+  for(i=0; i<(*nRows); i++) A[i]=malloc(nCol*sizeof(double));
+
+  fprintf(OUT, "mp_matrix2events(): Allocated memory for modesData\n");
+
+  *nRows=readMatrix(datafp, A, *nRows, nCol);
+  /* for(i=0; i<(*nRows); i++) { */
+  /*   for(j=0; j<nCol; j++) { */
+  /*     fprintf(OUT, "%g\t", A[i][j]); */
+  /*   } */
+  /*   fprintf(OUT,"\n"); */
+  /* } */
+  fprintf(OUT, "mp_matrix2OClength(): Successfully read %i lines of modesData\n", (*nRows));
+  /* Convert to nOpen/OCO*/
+  /* Converts A to NO and NC histogram: Po is in column 0 of A, 
+     length of segment is in column 2. */
+
+  /*Calculate number of events */
+  (*nEvents)=0;
+  for(i=0; i<(*nRows); i++) {
+    (*nEvents)+=(int)round(A[i][2]);
+  }
+  events=calloc(*nEvents, sizeof(*events));
+
+  modes2Events(events, (const double**)A, Pthresh, (*nRows));
+  
+  /*Free A*/
+  for(i=0; i<(*nRows); i++) free(A[i]);
+  free(A);
+
+  return events;
+}
+
 /* Read data from file fp, threshold values for obtaining a sequence
    of open and closed events. Calculate sequences of closed events NC
    and calculate number of open states NO. Calculate closed
@@ -484,13 +522,14 @@ void mp_getArgsNOpen(char **argv, int argc,char **datafn,
 		     int *nIter,
 		     double *delta,
 		     int *seed,
+		     double *samplingInt,
 		     double *thresh,
 		     char **ratesFn,
 		     char **statFn,
 		     char **likeFn) {
   int nArgs=6;
   char *endptr;
-  const char *usage="mp_NOpen data model nStates nOpen nIterations [delta] [seed] [prefix]";
+  const char *usage="mp_NOpen data model nStates nOpen nIterations [delta] [seed] [prefix] [samplinginterval] [threshold]";
   const char *defaultRatesFn="rates.dat";
   const char *defaultStatFn="statDist.dat";
   const char *defaultLikelihoodName="likelihood.dat";
@@ -520,20 +559,30 @@ void mp_getArgsNOpen(char **argv, int argc,char **datafn,
   /* Optional arguments */
   if(argc>=nArgs+1) {
     (*delta) = strtod(argv[nArgs], &endptr);
-    printf("delta: Step size of sampler: %f\n", (*delta));
   }
+  printf("delta: Step size of sampler: %f\n", (*delta));
+
 
   if(argc>=nArgs+2) {
     (*seed) = strtol(argv[nArgs+1], &endptr, 10);
-    printf("Seed for random number generator: %i\n", (*seed));
   }
+  printf("Seed for random number generator: %i\n", (*seed));
+
 
   if(argc>=nArgs+3) {
     prefix = argv[nArgs+2];
     printf("Prefix for output files: %s\n", prefix);    
   }
-  
-  fprintf(OUT, "Threshold: %f\n", *thresh);
+
+  if(argc>=nArgs+4) {
+    (*samplingInt) = strtod(argv[nArgs+3], &endptr);
+    printf("Sampling interval: %f\n", *samplingInt);    
+  }
+
+  if(argc>=nArgs+5) {
+    (*thresh) = strtod(argv[nArgs+4], &endptr);
+    printf("Threshold: %f\n", *thresh);    
+  }
 
   /* Add prefix to filenames */
   (*ratesFn)=malloc(sizeof(char)*(strlen(*ratesFn)+strlen(prefix))+1);

@@ -66,6 +66,8 @@ int* columnsData2NOC(const char *datafn, double thresh, int *NO, int *maxClosed,
 int* mp_columnsData2Events(const char *datafn, double thresh,
 			   int* nRows, int *nData);
 
+int *mp_matrix2events(FILE* datafp, int *nRows, int *nEvents, double Pthresh);
+
 /* Converts A to NO and NC histogram: Po is in column 0 of A, 
    length of segment is in column 2. */
 int modes2OClength(const double **A, int *NC, int *NO, int mA, double Pthresh, double *pC);
@@ -150,6 +152,7 @@ void mp_getArgsNOpen(char **argv, int argc,char **datafn,
 		     int *nIter,
 		     double *delta,
 		     int *seed,
+		     double *samplingInt,		     
 		     double *thresh,
 		     char **ratesFn,
 		     char **statFn,

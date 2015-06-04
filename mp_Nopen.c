@@ -337,7 +337,7 @@ int main(int argc, char **argv) {
   int i;
   int nRates;
   FILE *likefp;
-  int nRows=60000;
+  int nRows=100000;
 
   /* getArgs(argv, argc); */
   mp_getArgsNOpen(argv, argc,
@@ -348,6 +348,7 @@ int main(int argc, char **argv) {
 		  &nIter,
 		  &delta,
 		  &seed,
+		  &tau,
 		  &thresh,
 		  &ratesFn,
 		  &statFn,
