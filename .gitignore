@@ -18,9 +18,11 @@
 *.app
 
 mp_OneOpen
+mp_Nopen
 tWalk
 tWalkOneOpen
 tWalkOneOpen_ModalGating
+gillespie
 
 # Output
 *.txt

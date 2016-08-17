@@ -18,7 +18,7 @@ MCMC= mp_parameter.o mp_mcmc.o likelihood.o mp_proposal.o
 
 HMM = matrixIO.o matrixExp.o matrixArith.o mctools.o mp_HMMlikelihoods.o mp_HMMutils.o nw_data.o
 
-T = $(HMM) $(MCMC) mp_OneOpen$x	mp_Nopen$x
+T = $(HMM) $(MCMC) mp_OneOpen$x	mp_Nopen$x gillespie$x
 
 all:	$T
 
@@ -63,3 +63,6 @@ likelihood.o:	likelihood.c
 
 matrixIO.o:	matrixIO.c;
 		$(CC) $(CFLAGS) -c -o $@ matrixIO.c -I$(INCLUDE) $(GSLINC)
+
+gillespie$x:	gillespie.c;
+		$(CC) $(CFLAGS) -o $@ gillespie.c $(GSL) -I$(INCLUDE)
