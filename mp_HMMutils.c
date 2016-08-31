@@ -88,6 +88,49 @@ int readDoubles(FILE *fp, double *v, int buf) {
   return k;
 }
 
+char *lastLine(FILE *fp, char *buf, size_t max_len) {
+  char *last_newline; 
+  char *last_line;
+      
+  fseek(fp, -max_len, SEEK_END);
+  fread(buf, max_len-1, 1, fp);
+
+  buf[max_len-1] = '\0';
+  /* TODO: Check for NULL in case '\n' is not found. */
+  last_newline= strrchr(buf, '\n');
+  last_line = last_newline+1;
+
+  /* printf("%s\n", last_line); */
+  return last_line;
+}
+
+/* Convert s containing ints to an int vector*/
+size_t str2ints(char* s, int *nums) {
+  int i=0;
+  char *p, *endP=NULL;
+  int item;
+  for(p=s; ;p=endP)  {
+    item=strtol(p, &endP, 10);
+    if(p == endP) break;
+    nums[i++]=item;
+  }
+  return i;
+}
+
+/* Convert s containing ints to an int vector*/
+size_t str2doubleV(char* s, double *nums) {
+  int i=0;
+  char *p, *endP=NULL;
+  double item;
+  for(p=s; ;p=endP)  {
+    item=strtod(p, &endP);
+    if(p == endP) break;
+    nums[i++]=item;
+  }
+  return i;
+}
+
+
 /*Reads a dynamically allocated double matrix. Returns number of
   rows. */
 int readMatrix(FILE *fp, double **A, int M, int N) {
@@ -159,36 +202,90 @@ int guessOClength(const double *data, int *NC, int *NO, int *n, double thresh, d
 /*    of segment is in column 2. Returns maximum observed length of */
 /*    consecutive closed events. Sets pC to estimated closed */
 /*    probability. */
-int modes2OClength(const double **A, int *NC, int *NO, int mA, double Pthresh, double *pC) {
+int modes2OClength_col(const double *pO,
+		       const double *diff,
+		       int *NC, int *NO, int mA, double Pthresh, double *pC) {
   int nOpen=0;
   int nData=0;
   int i=0, maxClosed=0;
-  int isO=A[i][0]>Pthresh;
+  int isO=pO[i]>Pthresh;
   
   /* Check if first segment is 'open' */
-  while(i<mA && !isO) i++, isO=A[i][0]>Pthresh;
+  while(i<mA && !isO) i++, isO=pO[i]>Pthresh;
 
   for(; i<mA; i++) {
-    isO=A[i][0]>Pthresh;
+    isO=pO[i]>Pthresh;
     if(isO) {
-      int open=(int)round(A[i][2]);
+      int open=(int)round(diff[i]);
       fprintf(ERR, "modes2OClength(): %i: %i open events\n", i, open);
       nOpen+=open, nData+=open;
     }
     else {
       int closed=0;
       while( (i< mA) && (! isO) ) {
-	closed+=(int)round(A[i][2]);
+	closed+=(int)round(diff[i]);
 	fprintf(ERR, "modes2OClength(): %i: %i closed events\n", i, closed);
 	i++;
-	isO=A[i][0]>Pthresh;
+	isO=pO[i]>Pthresh;
       }
       /* Last segment must be thrown away because it does not end in
 	 open event */
       if( i>=mA) return maxClosed;
       else { /* We know that isO is false, so the current segment
 		contains open events */
-	int open=(int)round(A[i][2]);
+	int open=(int)round(diff[i]);
+	fprintf(ERR, "modes2OClength(): %i: %i open events\n", i, open);
+	nOpen+=open, nData+=open;
+      }
+      if(closed > maxClosed) maxClosed=closed;
+      NC[--closed]++, nData+=closed;
+
+    }
+  }
+
+  (*NO)=nOpen;
+  *pC=1-(double)nOpen/nData;
+  fprintf(OUT, "guessOClength(): nData=%i, pO = %f, pC=%f\n",
+	  nData, 1-(*pC), *pC);
+  return maxClosed;
+}
+
+/* SHOULD BE A CALL TO modesOClength_col() !!! */
+/* Converts A to NO and NC histogram: Po is in column 0 of A, length */
+/*    of segment is in column 2. Returns maximum observed length of */
+/*    consecutive closed events. Sets pC to estimated closed */
+/*    probability. */
+int modes2OClength(const double **A, int *NC, int *NO, int mA, double Pthresh, double *pC) {
+  int nOpen=0;
+  int nData=0;
+  int i=0, maxClosed=0;
+  const int colPo=0, colDiffs=1;
+  int isO=A[i][colPo]>Pthresh;
+  
+  /* Check if first segment is 'open' */
+  while(i<mA && !isO) i++, isO=A[i][colPo]>Pthresh;
+
+  for(; i<mA; i++) {
+    isO=A[i][colPo]>Pthresh;
+    if(isO) {
+      int open=(int)round(A[i][colDiffs]);
+      fprintf(ERR, "modes2OClength(): %i: %i open events\n", i, open);
+      nOpen+=open, nData+=open;
+    }
+    else {
+      int closed=0;
+      while( (i< mA) && (! isO) ) {
+	closed+=(int)round(A[i][colDiffs]);
+	fprintf(ERR, "modes2OClength(): %i: %i closed events\n", i, closed);
+	i++;
+	isO=A[i][colPo]>Pthresh;
+      }
+      /* Last segment must be thrown away because it does not end in
+	 open event */
+      if( i>=mA) return maxClosed;
+      else { /* We know that isO is false, so the current segment
+		contains open events */
+	int open=(int)round(A[i][colDiffs]);
 	fprintf(ERR, "modes2OClength(): %i: %i open events\n", i, open);
 	nOpen+=open, nData+=open;
       }
@@ -246,12 +343,13 @@ void modes2Events(int *events, const double **A, double Pthreshold,
 		  int nA) {
 
   int i, k=0, nOpen=0, nClosed=0, N;
+  const int colPo=0, colDiffs=1;
   for(i=0; i<nA; i++) {
     /* type of event */
-    int isO=(A[i][0]>Pthreshold);
-    int L=(int)round(A[i][2]);
+    int isO=(A[i][colPo]>Pthreshold);
+    int L=(int)round(A[i][colDiffs]);
     int j;
-    /* fprintf(OUT, "modes2Events(): %f > %f = %i\n", A[i][0], Pthreshold, isO); */
+    /* fprintf(OUT, "modes2Events(): %f > %f = %i\n", A[i][colPo], Pthreshold, isO); */
     for(j=0; j<L; j++, k++) events[k]=isO;
     if(isO) nOpen += L;
     else nClosed +=L;
@@ -261,11 +359,11 @@ void modes2Events(int *events, const double **A, double Pthreshold,
 	  N, (double) nOpen/N, (double)nClosed/N);
 }
 
-int* mp_matrix2events(FILE* datafp, int *nRows, int *nEvents, double Pthresh) {
+int* mp_matrix2events(FILE* datafp, int *nRows, int nCol, int *nEvents, double Pthresh) {
   double **A=malloc((*nRows)*sizeof(*A));
   int i;
   int *events;
-  int nCol=4;
+  int colPo=0, colDiffs=1;
   
   for(i=0; i<(*nRows); i++) A[i]=malloc(nCol*sizeof(double));
 
@@ -286,7 +384,7 @@ int* mp_matrix2events(FILE* datafp, int *nRows, int *nEvents, double Pthresh) {
   /*Calculate number of events */
   (*nEvents)=0;
   for(i=0; i<(*nRows); i++) {
-    (*nEvents)+=(int)round(A[i][2]);
+    (*nEvents)+=(int)round(A[i][colDiffs]);
   }
   events=calloc(*nEvents, sizeof(*events));
 
@@ -447,19 +545,20 @@ void mp_getArgsOneOpen(char **argv, int argc,char **datafn,
 		       int *nIter,
 		       double *delta,
 		       int *seed,
+		       char **restartFn,
 		       double *thresh,
 		       char **ratesFn,
 		       char **statFn,
 		       char **likeFn) {
-  int nArgs=5;
+  int nArgs=5, nOpt=4;
   char *endptr;
-  const char *usage="mp_OneOpen data model nStates nIterations [delta] [seed] [prefix]";
+  const char *usage="mp_OneOpen data model nStates nIterations [delta] [seed] [prefix] [restart]";
   const char *defaultRatesFn="rates.dat";
   const char *defaultStatFn="statDist.dat";
   const char *defaultLikelihoodName="likelihood.dat";
   char *prefix="piggy";
   
-  if(argc < nArgs) {
+  if( (argc < nArgs) || (argc > nArgs+nOpt) ) {
     fprintf(ERR, "Usage: %s\n", usage), exit(1);
   }
 
@@ -492,6 +591,11 @@ void mp_getArgsOneOpen(char **argv, int argc,char **datafn,
     prefix = argv[nArgs+2];
     printf("Prefix for output files: %s\n", prefix);    
   }
+
+  if(argc>=nArgs+4) {
+    (*restartFn) = argv[nArgs+3];
+    printf("File for initialising restart: %s\n", (*restartFn));    
+  }
   
   fprintf(OUT, "Threshold: %f\n", *thresh);
 
@@ -522,20 +626,21 @@ void mp_getArgsNOpen(char **argv, int argc,char **datafn,
 		     int *nIter,
 		     double *delta,
 		     int *seed,
+		     char **restartFn,
 		     double *samplingInt,
 		     double *thresh,
 		     char **ratesFn,
 		     char **statFn,
 		     char **likeFn) {
-  int nArgs=6;
+  int nArgs=6, nOpt=6;
   char *endptr;
-  const char *usage="mp_NOpen data model nStates nOpen nIterations [delta] [seed] [prefix] [samplinginterval] [threshold]";
+  const char *usage="mp_NOpen data model nStates nOpen nIterations [delta] [seed] [prefix] [restart] [samplinginterval] [threshold]";
   const char *defaultRatesFn="rates.dat";
   const char *defaultStatFn="statDist.dat";
   const char *defaultLikelihoodName="likelihood.dat";
   char *prefix="piggyN";
   
-  if(argc < nArgs) {
+  if( (argc < nArgs) || (argc > nArgs+nOpt)) {
     fprintf(ERR, "Usage: %s\n", usage), exit(1);
   }
 
@@ -575,12 +680,17 @@ void mp_getArgsNOpen(char **argv, int argc,char **datafn,
   }
 
   if(argc>=nArgs+4) {
-    (*samplingInt) = strtod(argv[nArgs+3], &endptr);
-    printf("Sampling interval: %f\n", *samplingInt);    
+    (*restartFn) = argv[nArgs+3];
+    printf("File for initialising restart: %s\n", (*restartFn));    
   }
 
   if(argc>=nArgs+5) {
-    (*thresh) = strtod(argv[nArgs+4], &endptr);
+    (*samplingInt) = strtod(argv[nArgs+4], &endptr);
+    printf("Sampling interval: %f\n", *samplingInt);    
+  }
+
+  if(argc>=nArgs+6) {
+    (*thresh) = strtod(argv[nArgs+5], &endptr);
     printf("Threshold: %f\n", *thresh);    
   }
 

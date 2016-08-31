@@ -86,6 +86,8 @@ void outRatesStatDist(FILE *fp, int iteration,
 
 static char *ratesFn="rates.dat", *statFn="statDist.dat", *likeFn="likelihood.dat";
 
+static char* restartFn=NULL;
+
 static char *datafn="NOFILE";
 
 static  char *modelfile="model/rates.txt";
@@ -112,6 +114,7 @@ int main(int argc, char **argv) {
 		    &nIter,
 		    &delta,
 		    &seed,
+		    &restartFn,
 		    &thresh,
 		    &ratesFn,
 		    &statFn,

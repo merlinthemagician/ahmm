@@ -34,6 +34,15 @@ double expPrior (const parameters *p, int nP,
 /* Exponential prior */
 double expDoublePrior (const parameters *p, int nP, likelihood *L);
 
+/* Reads last line of a text file */
+char *lastLine(FILE *fp, char *buf, size_t max_len);
+
+/* Convert s containing ints to an int vector*/
+size_t str2ints(char* s, int *nums);
+
+/* Convert s containing double to a double vector*/
+size_t str2doubleV(char* s, double *nums);
+
 /*Reads a list of doubles*/
 int readDoubles(FILE *fp, double *v, int buf);
 
@@ -66,7 +75,7 @@ int* columnsData2NOC(const char *datafn, double thresh, int *NO, int *maxClosed,
 int* mp_columnsData2Events(const char *datafn, double thresh,
 			   int* nRows, int *nData);
 
-int *mp_matrix2events(FILE* datafp, int *nRows, int *nEvents, double Pthresh);
+int *mp_matrix2events(FILE* datafp, int *nRows, int nCol, int *nEvents, double Pthresh);
 
 /* Converts A to NO and NC histogram: Po is in column 0 of A, 
    length of segment is in column 2. */
@@ -139,6 +148,7 @@ void mp_getArgsOneOpen(char **argv, int argc,char **datafn,
 		       int *nIter,
 		       double *delta,
 		       int *seed,
+		       char **restartFn,
 		       double *thresh,
 		       char **ratesFn,
 		       char **statFn,
@@ -152,6 +162,7 @@ void mp_getArgsNOpen(char **argv, int argc,char **datafn,
 		     int *nIter,
 		     double *delta,
 		     int *seed,
+		     char **restartFn,
 		     double *samplingInt,		     
 		     double *thresh,
 		     char **ratesFn,

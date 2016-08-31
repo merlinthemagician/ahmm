@@ -18,7 +18,9 @@ MCMC= mp_parameter.o mp_mcmc.o likelihood.o mp_proposal.o
 
 HMM = matrixIO.o matrixExp.o matrixArith.o mctools.o mp_HMMlikelihoods.o mp_HMMutils.o nw_data.o
 
-T = $(HMM) $(MCMC) mp_OneOpen$x	mp_Nopen$x gillespie$x
+T = $(HMM) $(MCMC) mp_OneOpen$x	mp_Nopen$x gillespie$x tWalkOneOpen$x mp_OneOpen_ModalGating$x
+
+#tWalkNOpen_ModalGating$x tWalk$x tWalkOneOpen_ModalGating$x
 
 all:	$T
 
@@ -53,7 +55,23 @@ mp_OneOpen$x:	$(MCMC) $(HMM) mp_OneOpen.c
 		$(CC) $(CFLAGS) -o $@ $(MCMC) $(HMM) mp_OneOpen.c -I$(INCLUDE) $(GSL)
 
 mp_Nopen$x:	$(MCMC) $(HMM) mp_Nopen.c
-		$(CC) $(CFLAGS) -o $@ $(MCMC) $(HMM) mp_Nopen.c -I$(INCLUDE) -I$(INC) -I$(NETWORK) $(GSL)
+		$(CC) $(CFLAGS) -o $@ $(MCMC) $(HMM) mp_Nopen.c -I$(INCLUDE) $(GSL)
+
+tWalk$x:	$(MCMC) $(HMM) tWalk.c
+		$(CC) $(CFLAGS) -o $@ $(MCMC) $(HMM) tWalk.c -I$(INCLUDE)  $(GSL)
+
+tWalkOneOpen$x:	$(MCMC) $(HMM) tWalkOneOpen.c
+		$(CC) $(CFLAGS) -o $@ $(MCMC) $(HMM) tWalkOneOpen.c -I$(INCLUDE) $(GSL)
+
+tWalkOneOpen_ModalGating$x:	$(MCMC) $(HMM) tWalkOneOpen_ModalGating.c
+		$(CC) $(CFLAGS) -o $@ $(MCMC) $(HMM) tWalkOneOpen_ModalGating.c -I$(INCLUDE) $(GSL)
+
+tWalkNOpen_ModalGating$x:	$(MCMC) $(HMM) tWalkNOpen_ModalGating.c
+		$(CC) $(CFLAGS) -o $@ $(MCMC) $(HMM) tWalkNOpen_ModalGating.c -I$(INCLUDE) $(GSL)
+
+mp_OneOpen_ModalGating$x:	$(MCMC) $(HMM) mp_OneOpen_ModalGating.c
+		$(CC) $(CFLAGS) -o $@ $(MCMC) $(HMM) mp_OneOpen_ModalGating.c -I$(INCLUDE) $(GSL)
+
 
 mp_mcmc.o:	mp_mcmc.c;
 		$(CC) $(CFLAGS) -c -o $@ mp_mcmc.c -I$(INCLUDE) $(GSLINC)
