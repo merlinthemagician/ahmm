@@ -18,6 +18,7 @@
 *.app
 
 mp_OneOpen
+mp_OneOpen_ModalGating
 mp_Nopen
 tWalk
 tWalkOneOpen
