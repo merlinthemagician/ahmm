@@ -129,9 +129,6 @@ int main(int argc, char **argv) {
 			&NO, &maxClosed,
 			0.35, &pC);
 
-  NC=columnsData2NOC(datafn, thresh, &NO, &maxClosed,
-		     &lines, &nData, &pC);
-  /* exit(1); */
   /* Read model from file modelfile in double vector model */
   model=readModel(modelfile, nStates);
   /* exit(1); */
