@@ -16,9 +16,11 @@ D =	Aggregated Hidden Markov Models
 
 MCMC= mp_parameter.o mp_mcmc.o likelihood.o mp_proposal.o
 
-HMM = matrixIO.o matrixExp.o matrixArith.o mctools.o mp_HMMlikelihoods.o mp_HMMutils.o nw_data.o
+MCTOOLS = matrixIO.o matrixExp.o matrixArith.o mctools.o
 
-T = $(HMM) $(MCMC) mp_OneOpen$x	mp_Nopen$x gillespie$x tWalkOneOpen$x mp_OneOpen_ModalGating$x
+HMM =  $(MCTOOLS) mp_HMMlikelihoods.o mp_HMMutils.o nw_data.o
+
+T = $(HMM) $(MCMC) mp_OneOpen$x	mp_Nopen$x gillespie$x tWalkOneOpen$x mp_OneOpen_ModalGating$x openDist$x closedDist$x
 
 #tWalkNOpen_ModalGating$x tWalk$x tWalkOneOpen_ModalGating$x
 
@@ -82,5 +84,11 @@ likelihood.o:	likelihood.c
 matrixIO.o:	matrixIO.c;
 		$(CC) $(CFLAGS) -c -o $@ matrixIO.c -I$(INCLUDE) $(GSLINC)
 
-gillespie$x:	gillespie.c;
-		$(CC) $(CFLAGS) -o $@ gillespie.c $(GSL) -I$(INCLUDE)
+gillespie$x:	matrixIO.o gillespie.c;
+		$(CC) $(CFLAGS) -o $@ matrixIO.o gillespie.c $(GSL) -I$(INCLUDE)
+
+openDist$x:	$(MCTOOLS) sojournDist.c
+		$(CC) $(CFLAGS) -DOPEN -o $@ $(MCTOOLS) sojournDist.c $(GSL) -I$(INCLUDE)
+
+closedDist$x:	sojournDist.c
+		$(CC) $(CFLAGS) -DCLOSED -o $@ $(MCTOOLS) sojournDist.c $(GSL) -I$(INCLUDE)

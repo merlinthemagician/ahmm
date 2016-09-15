@@ -24,6 +24,8 @@ tWalk
 tWalkOneOpen
 tWalkOneOpen_ModalGating
 gillespie
+closedDist
+openDist
 
 # Output
 *.txt

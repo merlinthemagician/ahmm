@@ -187,28 +187,6 @@ void makeConservative() {
   }
 }
 
-/*Reads a dynamically allocated double matrix. Returns number of
-  rows. */
-int readMatrix(FILE *fp, int nRows, int nCols, double (*m)[nCols]) {
-  int k=0, l=0;
-  double d;
-  for(k=0; k<nRows; k++) {
-    for(l=0; l<nCols; l++) {
-      int err=fscanf(fp,"%lf", &d);
-      if( err==EOF) {
-	fprintf(ERR, "readMatrix(): File ended in line %i, before M=%i\n",
-		k,  nRows);
-	return k;
-      }
-      if(!err) {
-	fprintf(ERR, "readMatrix(): Error reading line k=%i\n", k), exit(1);
-      }
-      m[k][l]=d;
-    }
-  }
-  return k;
-}
-
 void processArgs(int argc, char **argv){
   int i,j;
   int nArgs=5, nArgMax=9;
@@ -232,7 +210,7 @@ void processArgs(int argc, char **argv){
   double (*qr)[nStates]=malloc(sizeof (double[nStates][nStates]));
   fp=fopen(modelFn,"r");
   
-  readMatrix(fp, nStates, nStates, qr);
+  io_readMatrix(fp, nStates, nStates, qr);
   /* copy to Qrates */
   Qrates=malloc(nStates*sizeof(double*));
   for(i=0; i<nStates; i++) {

@@ -87,6 +87,10 @@ void printMatPPM(char *fn, gsl_matrix_view *uEqnView,
 /*Ausgabe einer gsl_matrix in das File f*/
 void printMatPGM(FILE *f, const gsl_matrix *m, double s);
 
+/*Reads a dynamically allocated double matrix. Returns number of
+  rows. */
+int io_readMatrix(FILE *fp, int nRows, int nCols, double (*m)[nCols]);
+
 /*Liest eine Matrix mit double-Werten aus einer Datei ein*/
 gsl_matrix *readMat(FILE *fp);
 
