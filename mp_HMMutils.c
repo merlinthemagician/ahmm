@@ -634,14 +634,14 @@ void mp_getArgsNOpen(char **argv, int argc,char **datafn,
 		     char **likeFn) {
   int nArgs=6, nOpt=6;
   char *endptr;
-  const char *usage="mp_NOpen data model nStates nOpen nIterations [delta] [seed] [prefix] [restart] [samplinginterval] [threshold]";
+  const char *usage="data model nStates nOpen nIterations [delta] [seed] [prefix] [restart] [samplinginterval] [threshold]";
   const char *defaultRatesFn="rates.dat";
   const char *defaultStatFn="statDist.dat";
   const char *defaultLikelihoodName="likelihood.dat";
   char *prefix="piggyN";
   
   if( (argc < nArgs) || (argc > nArgs+nOpt)) {
-    fprintf(ERR, "Usage: %s\n", usage), exit(1);
+    fprintf(ERR, "Usage: %s %s\n", argv[0], usage), exit(1);
   }
 
   /* datafn=argv[1]; */
