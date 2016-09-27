@@ -20,7 +20,7 @@ MCTOOLS = matrixIO.o matrixExp.o matrixArith.o mctools.o
 
 HMM =  $(MCTOOLS) mp_HMMlikelihoods.o mp_HMMutils.o nw_data.o
 
-T = $(HMM) $(MCMC) mp_OneOpen$x	mp_Nopen$x gillespie$x tWalkOneOpen$x mp_OneOpen_ModalGating$x openDist$x closedDist$x
+T = $(HMM) $(MCMC) mp_OneOpen$x	mp_Nopen$x gillespie$x tWalkOneOpen$x tWalkOneOpen_ModalGating$x mp_OneOpen_ModalGating$x openDist$x closedDist$x
 
 #tWalkNOpen_ModalGating$x tWalk$x tWalkOneOpen_ModalGating$x
 

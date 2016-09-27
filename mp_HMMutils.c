@@ -552,14 +552,14 @@ void mp_getArgsOneOpen(char **argv, int argc,char **datafn,
 		       char **likeFn) {
   int nArgs=5, nOpt=4;
   char *endptr;
-  const char *usage="mp_OneOpen data model nStates nIterations [delta] [seed] [prefix] [restart]";
+  const char *usage="data model nStates nIterations [delta] [seed] [prefix] [restart]";
   const char *defaultRatesFn="rates.dat";
   const char *defaultStatFn="statDist.dat";
   const char *defaultLikelihoodName="likelihood.dat";
   char *prefix="piggy";
   
   if( (argc < nArgs) || (argc > nArgs+nOpt) ) {
-    fprintf(ERR, "Usage: %s\n", usage), exit(1);
+    fprintf(ERR, "Usage: %s %s\n", argv[0], usage), exit(1);
   }
 
   /* datafn=argv[1]; */
